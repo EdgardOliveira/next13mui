@@ -5,6 +5,7 @@ import Navbar from "../navbar/Navbar";
 import { ReactNode, useState } from "react";
 import Sidebar from "../sidebar/Sidebar";
 import { styled } from "@mui/material/styles";
+import { SnackbarProvider, useSnackbar, VariantType } from "notistack";
 
 const DrawerHeader = styled("div")(({ theme }) => ({
   display: "flex",
@@ -38,25 +39,30 @@ export default function BaseLayout({ children, itensMenu }: ISidebarProps) {
     setOpen(false);
   };
 
+
+
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
-      <Navbar
-        appName="Next13MUI"
-        statusMenu={open}
-        openMenu={handleDrawerOpen}
-        closeMenu={handleDrawerClose}
-      />
-      <Sidebar
-        statusMenu={open}
-        closeMenu={handleDrawerClose}
-        itensMenu={itensMenu}
-      ></Sidebar>
+      <SnackbarProvider maxSnack={4} preventDuplicate>
+        <Navbar
+          appName="Next13MUI"
+          statusMenu={open}
+          openMenu={handleDrawerOpen}
+          closeMenu={handleDrawerClose}
+        />
+        <Sidebar
+          statusMenu={open}
+          closeMenu={handleDrawerClose}
+          itensMenu={itensMenu}
+        ></Sidebar>
 
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <DrawerHeader />
-        {children}
-      </Box>
+        <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+          <DrawerHeader />
+          {children}
+        </Box>
+      </SnackbarProvider>
     </Box>
   );
 }
+

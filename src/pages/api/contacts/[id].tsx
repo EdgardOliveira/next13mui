@@ -22,7 +22,7 @@ async function deleteById(req: NextApiRequest, res: NextApiResponse) {
 
   try {
     if (!id) {
-      return res.status(400).json({
+      return res.status(404).json({
         sucess: false,
         mensage: "É necessário fornecer um id",
         data: [],
@@ -42,6 +42,13 @@ async function deleteById(req: NextApiRequest, res: NextApiResponse) {
         mensage: "Registro excluído com sucesso",
         data: results,
         error: "",
+      });
+    } else {
+      return res.status(404).json({
+        sucess: false,
+        mensage: "Nenhum resultado encontrado",
+        data: [],
+        error: "Não encontramos o registro para ser excluído",
       });
     }
   } catch (e) {

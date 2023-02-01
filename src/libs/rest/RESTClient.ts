@@ -1,35 +1,56 @@
-export async function obterDados(url: string) {
+export async function getAllData(url: string) {
   const result = await fetch(url, {
     method: "GET",
-  })
-    .then((response) => response.json())
-    .then((json) => json.data);
+    headers: {
+      "Content-Type": "application/json" 
+    },
+  });
 
   return result;
 }
 
-export async function postarDados(url: string, corpo: string) {
-  const res = await fetch(url, {
+export async function getDataById(url: string) {
+  const result = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json" 
+    },
+  })
+
+  return result;
+}
+
+export async function postData(url: string, body: string) {
+  const result = await fetch(url, {
     method: "POST",
-    body: JSON.stringify(corpo),
-  });
-  const json = await res.json();
-  return json;
+    headers: {
+      "Content-Type": "application/json" 
+    },
+    body: JSON.stringify(body),
+  })
+
+  return result;
 }
 
-export async function atualizarDados(url: string, corpo: string) {
-  const res = await fetch(url, {
+export async function updateData(url: string, body: string) {
+  const result = await fetch(url, {
     method: "PUT",
-    body: JSON.stringify(corpo),
-  });
-  const json = await res.json();
-  return json;
+    headers: {
+      "Content-Type": "application/json" 
+    },
+    body: JSON.stringify(body),
+  })  
+
+  return result;
 }
 
-export async function excluirDados(url: string) {
-  const res = await fetch(url, {
+export async function deleteData(url: string) {
+  const result = await fetch(url, {
     method: "DELETE",
-  });
-  const json = await res.json();
-  return json;
+    headers: {
+      "Content-Type": "application/json" 
+    },
+  })
+
+  return result;
 }
