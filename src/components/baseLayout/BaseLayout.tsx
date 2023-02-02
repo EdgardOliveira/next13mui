@@ -39,8 +39,6 @@ export default function BaseLayout({ children, itensMenu }: ISidebarProps) {
     setOpen(false);
   };
 
-
-
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
@@ -65,4 +63,3 @@ export default function BaseLayout({ children, itensMenu }: ISidebarProps) {
     </Box>
   );
 }
-

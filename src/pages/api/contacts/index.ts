@@ -15,7 +15,7 @@ export interface IContactsProps {
 }
 
 export interface IResultsProps {
-  sucess: boolean;
+  success: boolean;
   message: string;
   data?: IContactsProps[];
   error?: string;
@@ -44,7 +44,7 @@ async function getAll(req: NextApiRequest, res: NextApiResponse) {
     console.log(results);
 
     return res.status(200).json({
-      sucess: true,
+      success: true,
       message: "Consulta de dados realizada com sucesso",
       data: results,
       error: "",
@@ -52,7 +52,7 @@ async function getAll(req: NextApiRequest, res: NextApiResponse) {
   } catch (e) {
     if (e instanceof Error) {
       res.status(500).json({
-        sucess: false,
+        success: false,
         message: "Não conseguimos realizar a consulta dos dados",
         data: [],
         error: e.message,
