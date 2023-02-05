@@ -164,7 +164,6 @@ function Home() {
   };
 
   const handleEdit = async (id: string) => {
-    console.log("paginando para contactos id");
     router.push(`/contacts/${id}`);
   };
 
@@ -201,6 +200,7 @@ function Home() {
         subtitle={"Lista de contatos para futura referência"}
         data={contacts}
         columns={columns}
+        isLoading={isLoading}
       />
       <ConfirmationDialog
         title="EXCLUSÃO DE REGISTRO"

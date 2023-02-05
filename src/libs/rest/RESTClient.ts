@@ -10,7 +10,6 @@ export async function getAllData(url: string) {
 }
 
 export async function getDataById(url: string) {
-  console.log(`Entrei no getDataById: ${url}`);
   const result = await fetch(url, {
     method: "GET",
     headers: {
@@ -21,7 +20,7 @@ export async function getDataById(url: string) {
   return result;
 }
 
-export async function postData(url: string, body: string) {
+export async function postData(url: string, body: any) {
   const result = await fetch(url, {
     method: "POST",
     headers: {

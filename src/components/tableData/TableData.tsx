@@ -1,16 +1,35 @@
-import { Box, useTheme } from "@mui/material";
+import { Box, Skeleton, useTheme } from "@mui/material";
 import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { blue, green, grey } from "@mui/material/colors";
 import Header from "../header/Header";
+
+const LoadingSkeleton = () => (
+  <Box
+    sx={{
+      height: "max-content",
+    }}
+  >
+    {[...Array(10)].map((_, index) => (
+      <Skeleton key={index} variant="rectangular" sx={{ my: 4, mx: 1 }} />
+    ))}
+  </Box>
+);
 
 interface ITableProps {
   data: any;
   columns: any;
   title: string;
   subtitle: string;
+  isLoading: boolean;
 }
 
-const TableData = ({ data, columns, title, subtitle }: ITableProps) => {
+const TableData = ({
+  data,
+  columns,
+  title,
+  subtitle,
+  isLoading,
+}: ITableProps) => {
   const theme = useTheme();
 
   return (
@@ -51,11 +70,18 @@ const TableData = ({ data, columns, title, subtitle }: ITableProps) => {
         <DataGrid
           rows={data}
           columns={columns}
-          components={{ Toolbar: GridToolbar }}
-          // pageSize={20}
+          pageSize={10}
+          rowsPerPageOptions={[10, 25, 50, 100]}
           autoHeight
-          // checkboxSelection
           disableSelectionOnClick
+          disableColumnMenu
+          disableColumnSelector
+          components={{
+            Toolbar: GridToolbar,
+            LoadingOverlay: LoadingSkeleton,
+          }}
+          loading={isLoading}
+          sx={{ minHeight: 600 }}
         />
       </Box>
     </Box>

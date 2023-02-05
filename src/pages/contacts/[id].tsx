@@ -4,17 +4,19 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import PeopleIcon from "@mui/icons-material/People";
 import WifiIcon from "@mui/icons-material/Wifi";
 import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
+import SaveIcon from "@mui/icons-material/Save";
 import { IMenuProps } from "@/components/sidebar/Sidebar";
 import { useState, useEffect } from "react";
 import { IContactsProps, IResultsProps } from "../api/contacts";
-import { Box, TextField } from "@mui/material";
-import { getDataById } from "@/libs/rest/RESTClient";
+import { Box, Button, TextField } from "@mui/material";
+import { getDataById, postData } from "@/libs/rest/RESTClient";
 import { SnackbarProvider, VariantType, useSnackbar } from "notistack";
 import { useRouter } from "next/router";
 import Header from "@/components/header/Header";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { InferType, number, object, string } from "yup";
+import { type } from "os";
 
 // A função abaixo demonstra o uso de uma expressão regular que identifica, de forma simples, telefones válidos no Brasil.
 // Nenhum DDD iniciado por 0 é aceito, e nenhum número de telefone pode iniciar com 0 ou 1.
@@ -59,9 +61,9 @@ export default function CadastrarEditar() {
 
 function AddEdit() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isPosting, setIsPosting] = useState<boolean>(false);
   const [contact, setContact] = useState<IContactsProps>();
   const [openDialog, setOpenDialog] = useState<boolean>(false);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const router = useRouter();
   const { id } = router.query;
@@ -69,6 +71,8 @@ function AddEdit() {
     register,
     handleSubmit,
     reset,
+    setValue,
+    getValues,
     formState: {
       errors,
       isSubmitSuccessful,
@@ -81,8 +85,6 @@ function AddEdit() {
     resolver: yupResolver(validationSchema),
   });
 
-  console.log(`AddEdit: ${id}`);
-
   // itens do menu
   const itensMenu: Array<IMenuProps> = [
     { titulo: "Inicial", url: "/", icone: <HomeIcon /> },
@@ -93,7 +95,8 @@ function AddEdit() {
   ];
 
   const onSubmit: SubmitHandler<TFormData> = (values: TFormData) => {
-    console.log(values);
+    setContact(values as IContactsProps);
+    setIsPosting(true);
   };
 
   const handleClickOpen = () => {
@@ -104,26 +107,37 @@ function AddEdit() {
     setOpenDialog(false);
   };
 
+  const isAddMode: boolean = Number(id) === 0 ? true : false;
+
   async function handleResponse(variant: VariantType, message: String) {
     enqueueSnackbar(message, { variant });
   }
 
   useEffect(() => {
-    setIsLoading(true);
+    console.log(`useEffect somente uma vez: id: ${id}`);
+    if (!isAddMode) {
+      setIsLoading(true);
+    }
   }, []);
 
   useEffect(() => {
-    if (isLoading) {
+    console.log(`useEffect do getbyid`);
+    //se não estiver no modo de cadastro... carrega os dados do id fornecido
+    if (!isAddMode) {
+      console.log(`estou no modo Edição... consultando api`);
       const fetchData = async () => {
         const response = await getDataById(`/api/contacts/${id}`);
         const json = await response.json();
         const { success, message, error }: IResultsProps = json;
-        const data: IContactsProps[] = json.data;
+        const data: IContactsProps = json.data;
 
         if (success) {
+          console.log(`use effet getById... tive sucesso na consulta...`);
           handleResponse("success", message);
+          setContact(data);
+          console.log(`Dados retornados: ${JSON.stringify(data, null, 4)}`);
+          console.log(`desativando o isLoading`);
           setIsLoading(false);
-          setContact(data[0]);
         } else {
           handleResponse("error", String(error));
           console.log(`Ocorreu um erro: ${error}`);
@@ -131,133 +145,162 @@ function AddEdit() {
       };
       fetchData();
     }
-  }, [isLoading]);
+  }, []);
+
+  useEffect(() => {
+    console.log(
+      `useEffect da mudança de contatos ... setValue ${JSON.stringify(
+        contact,
+        null,
+        4
+      )}`
+    );
+    if (contact) {
+      setValue("name", contact.name);
+      setValue("email", contact.email);
+      setValue("age", contact.age);
+      setValue("phone", contact.phone);
+      setValue("address", contact.address);
+      setValue("city", contact.city);
+      setValue("zipCode", contact.zipCode);
+      setValue("registrarId", contact.registrarId);
+      setIsLoading(false);
+    }
+  }, [contact]);
+
+  useEffect(() => {
+    console.log(`useEffect posting...`);
+    if (isPosting) {
+      console.log(`estou postando dados para api...`);
+      const postingData = async () => {
+        const response = await postData(`/api/contacts`, contact);
+        const json = await response.json();
+        const { success, message, error }: IResultsProps = json;
+        const data: IContactsProps[] = json.data;
+
+        if (success) {
+          handleResponse("success", message);
+          console.log(`registro cadastrado... trocando para listagem...`);
+          reset();
+          router.push("/contacts");
+        } else {
+          handleResponse("error", String(error));
+        }
+      };
+      postingData();
+    }
+  }, [contact]);
 
   return (
     <BaseLayout itensMenu={itensMenu}>
       <Header titulo={"Contatos"} subtitulo={"Edição de dados"}></Header>
       <Box
         component="form"
+        noValidate
+        autoComplete="off"
         sx={{
           "& .MuiTextField-root": { m: 1, width: "25ch" },
         }}
-        noValidate
-        autoComplete="off"
       >
         <form onSubmit={handleSubmit(onSubmit)}>
-          <TextField
-            variant="filled"
-            margin="normal"
-            fullWidth
-            id="name"
-            label="Nome"
-            placeholder="Insira o nome aqui"
-            {...register("name")}
-            // required
-            autoComplete="name"
-            autoFocus
-            // onChange={}
-            // value={}
-            error={!!errors.name?.message}
-            helperText={!!errors.name?.message}
-          />
-          <TextField
-            variant="filled"
-            margin="normal"
-            fullWidth
-            id="email"
-            label="E-mail"
-            placeholder="Insira o e-mail aqui"
-            {...register("email")}
-            // required
-            autoComplete="email"
-            autoFocus
-            // onChange={}
-            // value={}
-            error={!!errors.email?.message}
-            helperText={!!errors.email?.message}
-          />
-          <TextField
-            variant="filled"
-            margin="normal"
-            fullWidth
-            id="age"
-            label="Idade"
-            placeholder="Insira a idade aqui"
-            {...register("age")}
-            // required
-            autoComplete="age"
-            autoFocus
-            // onChange={}
-            // value={}
-            error={!!errors.age?.message}
-            helperText={!!errors.age?.message}
-          />
-          <TextField
-            variant="filled"
-            margin="normal"
-            fullWidth
-            id="address"
-            label="Endereço"
-            placeholder="Insira o endereço aqui"
-            {...register("address")}
-            // required
-            autoComplete="address"
-            autoFocus
-            // onChange={}
-            // value={}
-            error={!!errors.address?.message}
-            helperText={!!errors.address?.message}
-          />
-          <TextField
-            variant="filled"
-            margin="normal"
-            fullWidth
-            id="city"
-            label="Cidade"
-            placeholder="Insira a cidade aqui"
-            {...register("city")}
-            // required
-            autoComplete="city"
-            autoFocus
-            // onChange={}
-            // value={}
-            error={!!errors.city?.message}
-            helperText={!!errors.city?.message}
-          />
-          <TextField
-            variant="filled"
-            margin="normal"
-            fullWidth
-            id="zipCoode"
-            label="CEP"
-            placeholder="Insira o cep aqui"
-            {...register("zipCode")}
-            // required
-            autoComplete="zipCode"
-            autoFocus
-            // onChange={}
-            // value={}
-            error={!!errors.zipCode?.message}
-            helperText={!!errors.zipCode?.message}
-          />
-          <TextField
-            variant="filled"
-            margin="normal"
-            fullWidth
-            id="registrarId"
-            label="Id Cadastrador"
-            placeholder="Insira o id aqui"
-            {...register("registrarId")}
-            // required
-            autoComplete="registrarId"
-            autoFocus
-            // onChange={}
-            // value={}
-            error={!!errors.registrarId?.message}
-            helperText={!!errors.registrarId?.message}
-          />
-          <button type="submit">Enviar</button>
+          <Box>
+            <TextField
+              label="Nome"
+              type={"text"}
+              fullWidth
+              variant="outlined"
+              error={!!errors.name}
+              placeholder={"Insira o nome aqui"}
+              helperText={errors.name ? errors.name.message : ""}
+              {...register("name")}
+            />
+          </Box>
+          <Box>
+            <TextField
+              label="E-mail"
+              type={"email"}
+              fullWidth
+              variant="outlined"
+              error={!!errors.email}
+              helperText={errors.email ? errors.email.message : ""}
+              {...register("email")}
+            />
+          </Box>
+          <Box>
+            <TextField
+              label="Idade"
+              type={"number"}
+              fullWidth
+              variant="outlined"
+              error={!!errors.age}
+              helperText={errors.age ? errors.age.message : ""}
+              {...register("age")}
+            />
+          </Box>
+          <Box>
+            <TextField
+              label="Telefone"
+              type={"phone"}
+              fullWidth
+              variant="outlined"
+              error={!!errors.phone}
+              helperText={errors.phone ? errors.phone.message : ""}
+              {...register("phone")}
+            />
+          </Box>
+          <Box>
+            <TextField
+              label="Endereço"
+              type={"text"}
+              fullWidth
+              variant="outlined"
+              error={!!errors.address}
+              helperText={errors.address ? errors.address.message : ""}
+              {...register("address")}
+            />
+          </Box>
+          <Box>
+            <TextField
+              label="Cidade"
+              type={"text"}
+              fullWidth
+              variant="outlined"
+              error={!!errors.city}
+              helperText={errors.city ? errors.city.message : ""}
+              {...register("city")}
+            />
+          </Box>
+          <Box>
+            <TextField
+              label="CEP"
+              type={"number"}
+              fullWidth
+              variant="outlined"
+              error={!!errors.zipCode}
+              helperText={errors.zipCode ? errors.zipCode.message : ""}
+              {...register("zipCode")}
+            />
+          </Box>
+          <Box>
+            <TextField
+              label="Registrar Id"
+              type={"number"}
+              fullWidth
+              variant="outlined"
+              error={!!errors.registrarId}
+              helperText={errors.registrarId ? errors.registrarId.message : ""}
+              {...register("registrarId")}
+            />
+          </Box>
+          <Box>
+            <Button
+              variant="contained"
+              endIcon={<SaveIcon />}
+              onClick={handleSubmit(onSubmit)}
+            >
+              Salvar
+            </Button>
+          </Box>
         </form>
       </Box>
     </BaseLayout>

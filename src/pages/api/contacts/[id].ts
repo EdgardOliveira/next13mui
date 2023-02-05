@@ -9,7 +9,6 @@ export default async function Contacts(
 
   switch (method) {
     case "GET":
-      console.log(`GET getById`);
       getById(req, res);
       break;
     case "DELETE":
@@ -69,7 +68,6 @@ async function deleteById(req: NextApiRequest, res: NextApiResponse) {
 
 async function getById(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
-  console.log(`getById API: ${id}`);
   try {
     if (!id) {
       return res.status(404).json({
@@ -79,8 +77,6 @@ async function getById(req: NextApiRequest, res: NextApiResponse) {
         error: "Não foi fornecido um id",
       });
     }
-
-    console.log(`getDataById API consultando o id: ${id}`);
 
     const results = await prisma.contact.findUnique({
       where: {

@@ -1,6 +1,5 @@
 import prisma from "@/libs/db/Db";
 import { NextApiRequest, NextApiResponse } from "next";
-import { stringify } from "querystring";
 
 export interface IContactsProps {
   id: number;
@@ -31,17 +30,65 @@ export default async function Contacts(
     case "GET":
       getAll(req, res);
       break;
+    case "POST":
+      create(req, res);
+      break;
     default:
-      res.setHeader("Allow", ["GET"]);
+      res.setHeader("Allow", ["GET", "POST"]);
       res.status(405).end(`Método: ${method} não é permitido para esta rota`);
+  }
+}
+async function create(req: NextApiRequest, res: NextApiResponse) {
+  try {
+    const contact = req.body;
+
+    if (!contact) {
+      return res.status(404).json({
+        success: false,
+        message: "É necessário dados para cadastrar",
+        data: [],
+        error: "Não foram fornecidos dados para cadastrar",
+      });
+    }
+
+    const result = await prisma.contact.findFirst({
+      where: {
+        name: contact.email,
+      },
+    });
+
+    if (!result) {
+      const createdContact = await prisma.contact.create({ data: contact });
+
+      return res.status(201).json({
+        success: true,
+        message: "Dados cadastrados com sucesso!",
+        data: createdContact,
+        error: "",
+      });
+    } else {
+      return res.status(401).json({
+        success: false,
+        message: "Dados já existem!",
+        data: [],
+        error: "Os dados já existem!",
+      });
+    }
+  } catch (e) {
+    if (e instanceof Error) {
+      return res.status(500).json({
+        success: false,
+        message: "Ocorreu um erro ao tentar cadastrar",
+        data: [],
+        error: e.message,
+      });
+    }
   }
 }
 
 async function getAll(req: NextApiRequest, res: NextApiResponse) {
   try {
     const results = await prisma.contact.findMany();
-
-    console.log(results);
 
     return res.status(200).json({
       success: true,
