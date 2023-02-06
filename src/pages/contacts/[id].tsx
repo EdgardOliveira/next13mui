@@ -5,18 +5,19 @@ import PeopleIcon from "@mui/icons-material/People";
 import WifiIcon from "@mui/icons-material/Wifi";
 import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
 import SaveIcon from "@mui/icons-material/Save";
+import CheckIcon from "@mui/icons-material/Check";
 import { IMenuProps } from "@/components/sidebar/Sidebar";
 import { useState, useEffect } from "react";
 import { IContactsProps, IResultsProps } from "../api/contacts";
-import { Box, Button, TextField } from "@mui/material";
-import { getDataById, postData } from "@/libs/rest/RESTClient";
+import { Box, CircularProgress, Fab, TextField, Tooltip } from "@mui/material";
+import { getDataById, postData, updateData } from "@/libs/rest/RESTClient";
 import { SnackbarProvider, VariantType, useSnackbar } from "notistack";
 import { useRouter } from "next/router";
 import Header from "@/components/header/Header";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { InferType, number, object, string } from "yup";
-import { type } from "os";
+import { green } from "@mui/material/colors";
 
 // A função abaixo demonstra o uso de uma expressão regular que identifica, de forma simples, telefones válidos no Brasil.
 // Nenhum DDD iniciado por 0 é aceito, e nenhum número de telefone pode iniciar com 0 ou 1.
@@ -62,8 +63,9 @@ export default function CadastrarEditar() {
 function AddEdit() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isPosting, setIsPosting] = useState<boolean>(false);
+  const [isUpdating, setIsUpdating] = useState<boolean>(false);
+  const [isCompleted, setIsCompleted] = useState<boolean>(false);
   const [contact, setContact] = useState<IContactsProps>();
-  const [openDialog, setOpenDialog] = useState<boolean>(false);
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const router = useRouter();
   const { id } = router.query;
@@ -72,15 +74,7 @@ function AddEdit() {
     handleSubmit,
     reset,
     setValue,
-    getValues,
-    formState: {
-      errors,
-      isSubmitSuccessful,
-      isDirty,
-      isSubmitted,
-      isSubmitting,
-      isValid,
-    },
+    formState: { errors },
   } = useForm<TFormData>({
     resolver: yupResolver(validationSchema),
   });
@@ -94,17 +88,26 @@ function AddEdit() {
     { titulo: "Usuários", url: "/usuarios", icone: <AssignmentIndIcon /> },
   ];
 
+  const buttonSx = {
+    ...(isCompleted && {
+      bgcolor: green[500],
+      "&:hover": {
+        bgcolor: green[700],
+      },
+    }),
+  };
+
   const onSubmit: SubmitHandler<TFormData> = (values: TFormData) => {
     setContact(values as IContactsProps);
-    setIsPosting(true);
-  };
-
-  const handleClickOpen = () => {
-    setOpenDialog(true);
-  };
-
-  const handleClose = () => {
-    setOpenDialog(false);
+    switch (isAddMode) {
+      case true:
+        setIsPosting(true);
+        break;
+      case false:
+        setIsUpdating(true);
+        break;
+    }
+    setIsCompleted(false);
   };
 
   const isAddMode: boolean = Number(id) === 0 ? true : false;
@@ -114,17 +117,14 @@ function AddEdit() {
   }
 
   useEffect(() => {
-    console.log(`useEffect somente uma vez: id: ${id}`);
     if (!isAddMode) {
       setIsLoading(true);
     }
   }, []);
 
   useEffect(() => {
-    console.log(`useEffect do getbyid`);
     //se não estiver no modo de cadastro... carrega os dados do id fornecido
     if (!isAddMode) {
-      console.log(`estou no modo Edição... consultando api`);
       const fetchData = async () => {
         const response = await getDataById(`/api/contacts/${id}`);
         const json = await response.json();
@@ -132,15 +132,11 @@ function AddEdit() {
         const data: IContactsProps = json.data;
 
         if (success) {
-          console.log(`use effet getById... tive sucesso na consulta...`);
           handleResponse("success", message);
           setContact(data);
-          console.log(`Dados retornados: ${JSON.stringify(data, null, 4)}`);
-          console.log(`desativando o isLoading`);
           setIsLoading(false);
         } else {
           handleResponse("error", String(error));
-          console.log(`Ocorreu um erro: ${error}`);
         }
       };
       fetchData();
@@ -148,13 +144,6 @@ function AddEdit() {
   }, []);
 
   useEffect(() => {
-    console.log(
-      `useEffect da mudança de contatos ... setValue ${JSON.stringify(
-        contact,
-        null,
-        4
-      )}`
-    );
     if (contact) {
       setValue("name", contact.name);
       setValue("email", contact.email);
@@ -169,18 +158,18 @@ function AddEdit() {
   }, [contact]);
 
   useEffect(() => {
-    console.log(`useEffect posting...`);
     if (isPosting) {
-      console.log(`estou postando dados para api...`);
       const postingData = async () => {
         const response = await postData(`/api/contacts`, contact);
         const json = await response.json();
         const { success, message, error }: IResultsProps = json;
-        const data: IContactsProps[] = json.data;
+        const data: IContactsProps = json.data;
 
         if (success) {
           handleResponse("success", message);
-          console.log(`registro cadastrado... trocando para listagem...`);
+          setIsCompleted(true);
+          setIsPosting(false);
+          setIsLoading(false);
           reset();
           router.push("/contacts");
         } else {
@@ -191,19 +180,46 @@ function AddEdit() {
     }
   }, [contact]);
 
+  useEffect(() => {
+    if (isUpdating) {
+      const updatingData = async () => {
+        const response = await updateData(`/api/contacts`, contact);
+        const json = await response.json();
+        const { success, message, error }: IResultsProps = json;
+        const data: IContactsProps = json.data;
+
+        if (success) {
+          handleResponse("success", message);
+          setIsCompleted(true);
+          setIsUpdating(false);
+          setIsLoading(false);
+          reset();
+          router.push("/contacts");
+        } else {
+          handleResponse("error", String(error));
+        }
+      };
+      updatingData();
+    }
+  }, [contact]);
+
   return (
     <BaseLayout itensMenu={itensMenu}>
-      <Header titulo={"Contatos"} subtitulo={"Edição de dados"}></Header>
+      <Header
+        title={"Contatos"}
+        subtitle={isAddMode ? "Cadastrar dados" : "Editar dados"}
+      ></Header>
       <Box
-        component="form"
-        noValidate
-        autoComplete="off"
         sx={{
-          "& .MuiTextField-root": { m: 1, width: "25ch" },
+          "& .MuiTextField-root": { m: 1, width: "35ch" },
         }}
       >
         <form onSubmit={handleSubmit(onSubmit)}>
-          <Box>
+          <Box
+            sx={{
+              "& .MuiTextField-root": { m: 1, width: "45ch" },
+            }}
+          >
             <TextField
               label="Nome"
               type={"text"}
@@ -211,6 +227,7 @@ function AddEdit() {
               variant="outlined"
               error={!!errors.name}
               placeholder={"Insira o nome aqui"}
+              InputLabelProps={{ shrink: true }}
               helperText={errors.name ? errors.name.message : ""}
               {...register("name")}
             />
@@ -222,6 +239,8 @@ function AddEdit() {
               fullWidth
               variant="outlined"
               error={!!errors.email}
+              placeholder={"Insira o e-mail aqui"}
+              InputLabelProps={{ shrink: true }}
               helperText={errors.email ? errors.email.message : ""}
               {...register("email")}
             />
@@ -233,6 +252,8 @@ function AddEdit() {
               fullWidth
               variant="outlined"
               error={!!errors.age}
+              placeholder={"Insira a idade aqui"}
+              InputLabelProps={{ shrink: true }}
               helperText={errors.age ? errors.age.message : ""}
               {...register("age")}
             />
@@ -244,6 +265,8 @@ function AddEdit() {
               fullWidth
               variant="outlined"
               error={!!errors.phone}
+              placeholder={"Insira o telefone aqui"}
+              InputLabelProps={{ shrink: true }}
               helperText={errors.phone ? errors.phone.message : ""}
               {...register("phone")}
             />
@@ -255,6 +278,8 @@ function AddEdit() {
               fullWidth
               variant="outlined"
               error={!!errors.address}
+              placeholder={"Insira o endereço aqui"}
+              InputLabelProps={{ shrink: true }}
               helperText={errors.address ? errors.address.message : ""}
               {...register("address")}
             />
@@ -266,6 +291,8 @@ function AddEdit() {
               fullWidth
               variant="outlined"
               error={!!errors.city}
+              placeholder={"Insira a cidade aqui"}
+              InputLabelProps={{ shrink: true }}
               helperText={errors.city ? errors.city.message : ""}
               {...register("city")}
             />
@@ -277,6 +304,8 @@ function AddEdit() {
               fullWidth
               variant="outlined"
               error={!!errors.zipCode}
+              placeholder={"Insira o CEP aqui"}
+              InputLabelProps={{ shrink: true }}
               helperText={errors.zipCode ? errors.zipCode.message : ""}
               {...register("zipCode")}
             />
@@ -288,18 +317,35 @@ function AddEdit() {
               fullWidth
               variant="outlined"
               error={!!errors.registrarId}
+              placeholder={"Insira o id do registrador aqui"}
+              InputLabelProps={{ shrink: true }}
               helperText={errors.registrarId ? errors.registrarId.message : ""}
               {...register("registrarId")}
             />
           </Box>
-          <Box>
-            <Button
-              variant="contained"
-              endIcon={<SaveIcon />}
-              onClick={handleSubmit(onSubmit)}
-            >
-              Salvar
-            </Button>
+          <Box sx={{ m: 1, position: "relative" }}>
+            <Tooltip title="Salvar">
+              <Fab
+                aria-label="Salvar"
+                color="primary"
+                sx={buttonSx}
+                onClick={handleSubmit(onSubmit)}
+              >
+                {isCompleted ? <CheckIcon /> : <SaveIcon />}
+              </Fab>
+            </Tooltip>
+            {isLoading && (
+              <CircularProgress
+                size={68}
+                sx={{
+                  color: green[500],
+                  position: "absolute",
+                  top: -6,
+                  left: -6,
+                  zIndex: 1,
+                }}
+              />
+            )}
           </Box>
         </form>
       </Box>

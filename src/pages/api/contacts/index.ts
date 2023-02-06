@@ -30,14 +30,25 @@ export default async function Contacts(
     case "GET":
       getAll(req, res);
       break;
+    case "PUT":
+      update(req, res);
+      break;
     case "POST":
       create(req, res);
       break;
     default:
-      res.setHeader("Allow", ["GET", "POST"]);
-      res.status(405).end(`Método: ${method} não é permitido para esta rota`);
+      res
+        .status(405)
+        .setHeader("Allow", ["GET", "UPDATE", "POST"])
+        .json({
+          success: false,
+          message: `Método: ${method} não é permitido para esta rota`,
+          data: [],
+          error: `Método: ${method} não é permitido para esta rota`,
+        });
   }
 }
+
 async function create(req: NextApiRequest, res: NextApiResponse) {
   try {
     const contact = req.body;
@@ -101,6 +112,44 @@ async function getAll(req: NextApiRequest, res: NextApiResponse) {
       res.status(500).json({
         success: false,
         message: "Não conseguimos realizar a consulta dos dados",
+        data: [],
+        error: e.message,
+      });
+    }
+  }
+}
+
+async function update(req: NextApiRequest, res: NextApiResponse) {
+  try {
+    const contact = req.body;
+
+    if (!contact) {
+      return res.status(404).json({
+        success: false,
+        message: "É necessário dados para atualizar",
+        data: [],
+        error: "Não foram fornecidos dados para atualizar",
+      });
+    }
+
+    const updateContact = await prisma.contact.update({
+      where: {
+        id: contact.id,
+      },
+      data: contact,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Dados atualizados com sucesso!",
+      data: updateContact,
+      error: "",
+    });
+  } catch (e) {
+    if (e instanceof Error) {
+      return res.status(500).json({
+        success: false,
+        message: "Ocorreu um erro ao tentar cadastrar",
         data: [],
         error: e.message,
       });

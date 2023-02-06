@@ -1,7 +1,14 @@
-import { Box, Skeleton, useTheme } from "@mui/material";
-import { DataGrid, GridToolbar } from "@mui/x-data-grid";
+import { Box, Button, Skeleton } from "@mui/material";
+import {
+  DataGrid,
+  GridToolbarColumnsButton,
+  GridToolbarContainer,
+  GridToolbarDensitySelector,
+  GridToolbarExport,
+  GridToolbarFilterButton,
+} from "@mui/x-data-grid";
+import AddIcon from "@mui/icons-material/Add";
 import { blue, green, grey } from "@mui/material/colors";
-import Header from "../header/Header";
 
 const LoadingSkeleton = () => (
   <Box
@@ -16,25 +23,29 @@ const LoadingSkeleton = () => (
 );
 
 interface ITableProps {
-  data: any;
+  rows: any;
   columns: any;
-  title: string;
-  subtitle: string;
   isLoading: boolean;
+  addButton: () => void;
 }
 
-const TableData = ({
-  data,
-  columns,
-  title,
-  subtitle,
-  isLoading,
-}: ITableProps) => {
-  const theme = useTheme();
+const TableData = ({ rows, columns, isLoading, addButton }: ITableProps) => {
+  function CustomGridToolbar() {
+    return (
+      <GridToolbarContainer>
+        <GridToolbarColumnsButton />
+        <GridToolbarFilterButton />
+        <GridToolbarDensitySelector />
+        <GridToolbarExport />
+        <Button startIcon={<AddIcon />} onClick={addButton}>
+          Add
+        </Button>
+      </GridToolbarContainer>
+    );
+  }
 
   return (
     <Box m="20px">
-      <Header titulo={title} subtitulo={subtitle}></Header>
       <Box
         m="40px 0 0 0"
         height="75vh"
@@ -68,16 +79,14 @@ const TableData = ({
         }}
       >
         <DataGrid
-          rows={data}
+          rows={rows}
           columns={columns}
           pageSize={10}
           rowsPerPageOptions={[10, 25, 50, 100]}
           autoHeight
           disableSelectionOnClick
-          disableColumnMenu
-          disableColumnSelector
           components={{
-            Toolbar: GridToolbar,
+            Toolbar: CustomGridToolbar,
             LoadingOverlay: LoadingSkeleton,
           }}
           loading={isLoading}

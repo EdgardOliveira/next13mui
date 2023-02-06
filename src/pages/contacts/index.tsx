@@ -8,13 +8,13 @@ import { IMenuProps } from "@/components/sidebar/Sidebar";
 import TableData from "@/components/tableData/TableData";
 import { useState, useEffect } from "react";
 import { IContactsProps, IResultsProps } from "../api/contacts";
-import { Button, IconButton, Stack, Tooltip } from "@mui/material";
+import { IconButton, Stack, Tooltip } from "@mui/material";
 import { DeleteForever, Edit } from "@mui/icons-material";
-import ConfirmationDialog from "@/components/confirmationDialog/ConfirmationDialog";
 import { deleteData, getAllData } from "@/libs/rest/RESTClient";
 import { SnackbarProvider, VariantType, useSnackbar } from "notistack";
-import Link from "next/link";
 import { useRouter } from "next/router";
+import Header from "@/components/header/Header";
+import ConfirmationDialog from "@/components/confirmationDialog/ConfirmationDialog";
 
 export default function Iniciar() {
   return (
@@ -30,7 +30,6 @@ export default function Iniciar() {
         vertical: "top",
         horizontal: "right",
       }}
-      // preventDuplicate
     >
       <Home />
     </SnackbarProvider>
@@ -39,9 +38,10 @@ export default function Iniciar() {
 
 function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [contacts, setContacts] = useState<IContactsProps[]>([]);
-  const [openDialog, setOpenDialog] = useState<boolean>(false);
+  const [deleteId, setDeleteId] = useState<string>("");
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [open, setOpen] = useState<boolean>(false);
+  const [contacts, setContacts] = useState<IContactsProps[]>([]);
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const router = useRouter();
 
@@ -133,39 +133,36 @@ function Home() {
     },
   ];
 
-  const handleClickOpen = () => {
-    setOpenDialog(true);
-  };
-
-  const handleClose = () => {
-    setOpenDialog(false);
-  };
-
-  async function handleResponse(variant: VariantType, message: String) {
-    enqueueSnackbar(message, { variant });
-  }
-
-  const handleDelete = async (id: string) => {
-    const result = await deleteData(`/api/contacts/${id}`);
-    const json = await result.json();
-    const { success, message, error }: IResultsProps = json;
-
-    switch (success) {
-      case true:
-        handleResponse("success", message);
-        setIsLoading(true);
-        break;
-      case false:
-        handleResponse("error", String(error));
-        break;
-      default:
-        break;
-    }
+  const handleAdd = () => {
+    router.push("/contacts/0");
   };
 
   const handleEdit = async (id: string) => {
     router.push(`/contacts/${id}`);
   };
+
+  const handleDelete = async (id: string) => {
+    handleClickOpen();
+    setDeleteId(id);
+  };
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleCancel = () => {
+    setOpen(false);
+    setDeleteId("");
+  };
+
+  const handleConfirm = () => {
+    setOpen(false);
+    setIsDeleting(true);
+  };
+
+  async function handleResponse(variant: VariantType, message: String) {
+    enqueueSnackbar(message, { variant });
+  }
 
   useEffect(() => {
     setIsLoading(true);
@@ -181,7 +178,6 @@ function Home() {
 
         if (success) {
           handleResponse("success", message);
-          // feedback();
           setIsLoading(false);
           setContacts(data);
         } else {
@@ -193,25 +189,50 @@ function Home() {
     }
   }, [isLoading]);
 
+  useEffect(() => {
+    if (isDeleting) {
+      const deletingData = async () => {
+        const result = await deleteData(`/api/contacts/${deleteId}`);
+        const json = await result.json();
+        const { success, message, error }: IResultsProps = json;
+
+        switch (success) {
+          case true:
+            handleResponse("success", message);
+            setIsDeleting(false);
+            setDeleteId("");
+            setIsLoading(true);
+            break;
+          case false:
+            handleResponse("error", String(error));
+            break;
+          default:
+            break;
+        }
+      };
+      deletingData();
+    }
+  }, [isDeleting]);
+
   return (
     <BaseLayout itensMenu={itensMenu}>
-      <TableData
+      <Header
         title={"Contatos"}
         subtitle={"Lista de contatos para futura referência"}
-        data={contacts}
+      />
+      <TableData
+        rows={contacts}
         columns={columns}
         isLoading={isLoading}
+        addButton={handleAdd}
       />
       <ConfirmationDialog
-        title="EXCLUSÃO DE REGISTRO"
-        message="Realmente deseja excluir o registro?"
-        status={openDialog}
-        isDeleting={isDeleting}
-        handleClose={handleClose}
+        title={"EXCLUIR REGISTRO"}
+        contentText={"Realmente deseja excluir este registro?"}
+        open={open}
+        onClose={handleCancel}
+        onConfirm={handleConfirm}
       />
-      <Button variant="outlined" onClick={handleClickOpen}>
-        Disparo de ConfirmationDialog
-      </Button>
     </BaseLayout>
   );
 }

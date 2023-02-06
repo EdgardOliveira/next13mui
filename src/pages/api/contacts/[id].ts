@@ -24,7 +24,7 @@ async function deleteById(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
 
   try {
-    if (!id) {
+    if (!id || isNaN(Number(id))) {
       return res.status(404).json({
         success: false,
         message: "É necessário fornecer um id",
@@ -69,7 +69,7 @@ async function deleteById(req: NextApiRequest, res: NextApiResponse) {
 async function getById(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
   try {
-    if (!id) {
+    if (!id || isNaN(Number(id))) {
       return res.status(404).json({
         success: false,
         message: "É necessário fornecer um id",

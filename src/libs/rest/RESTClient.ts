@@ -32,7 +32,7 @@ export async function postData(url: string, body: any) {
   return result;
 }
 
-export async function updateData(url: string, body: string) {
+export async function updateData(url: string, body: any) {
   const result = await fetch(url, {
     method: "PUT",
     headers: {
