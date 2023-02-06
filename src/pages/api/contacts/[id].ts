@@ -11,12 +11,63 @@ export default async function Contacts(
     case "GET":
       getById(req, res);
       break;
-    case "DELETE":
+    case "PUT":
+      update(req, res);
+      break;      
+      case "DELETE":
       deleteById(req, res);
       break;
     default:
       res.setHeader("Allow", ["GET", "DELETE"]);
       res.status(405).end(`Método: ${method} não é permitido para esta rota`);
+  }
+}
+
+async function update(req: NextApiRequest, res: NextApiResponse) {
+  try {
+    const { id } = req.query;
+    const contact = req.body;
+
+    if (!id || isNaN(Number(id))) {
+      return res.status(404).json({
+        success: false,
+        message: "É necessário fornecer um id",
+        data: [],
+        error: "Não foi fornecido um id",
+      });
+    }
+
+    if (!contact) {
+      return res.status(404).json({
+        success: false,
+        message: "É necessário dados para atualizar",
+        data: [],
+        error: "Não foram fornecidos dados para atualizar",
+      });
+    }
+
+    const updateContact = await prisma.contact.update({
+      where: {
+        id: Number(id),
+      },
+      data: contact,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Dados atualizados com sucesso!",
+      data: updateContact,
+      error: "",
+    });
+  } catch (e) {
+    if (e instanceof Error) {
+      return res.status(500).json({
+        success: false,
+        message: "Ocorreu um erro ao tentar cadastrar",
+        data: [],
+        error: e.message,
+      });
+    }
   }
 }
 

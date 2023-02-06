@@ -61,10 +61,9 @@ export default function CadastrarEditar() {
 }
 
 function AddEdit() {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isPosting, setIsPosting] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
-  const [isCompleted, setIsCompleted] = useState<boolean>(false);
   const [contact, setContact] = useState<IContactsProps>();
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const router = useRouter();
@@ -89,7 +88,7 @@ function AddEdit() {
   ];
 
   const buttonSx = {
-    ...(isCompleted && {
+    ...(isLoading && {
       bgcolor: green[500],
       "&:hover": {
         bgcolor: green[700],
@@ -99,6 +98,7 @@ function AddEdit() {
 
   const onSubmit: SubmitHandler<TFormData> = (values: TFormData) => {
     setContact(values as IContactsProps);
+
     switch (isAddMode) {
       case true:
         setIsPosting(true);
@@ -107,7 +107,6 @@ function AddEdit() {
         setIsUpdating(true);
         break;
     }
-    setIsCompleted(false);
   };
 
   const isAddMode: boolean = Number(id) === 0 ? true : false;
@@ -117,14 +116,8 @@ function AddEdit() {
   }
 
   useEffect(() => {
-    if (!isAddMode) {
-      setIsLoading(true);
-    }
-  }, []);
-
-  useEffect(() => {
     //se não estiver no modo de cadastro... carrega os dados do id fornecido
-    if (!isAddMode) {
+    if (!isAddMode && isLoading) {
       const fetchData = async () => {
         const response = await getDataById(`/api/contacts/${id}`);
         const json = await response.json();
@@ -133,8 +126,8 @@ function AddEdit() {
 
         if (success) {
           handleResponse("success", message);
-          setContact(data);
           setIsLoading(false);
+          setContact(data);
         } else {
           handleResponse("error", String(error));
         }
@@ -160,14 +153,13 @@ function AddEdit() {
   useEffect(() => {
     if (isPosting) {
       const postingData = async () => {
-        const response = await postData(`/api/contacts`, contact);
+        const response = await postData(`/api/contacts/${id}`, contact);
         const json = await response.json();
         const { success, message, error }: IResultsProps = json;
         const data: IContactsProps = json.data;
 
         if (success) {
           handleResponse("success", message);
-          setIsCompleted(true);
           setIsPosting(false);
           setIsLoading(false);
           reset();
@@ -183,14 +175,13 @@ function AddEdit() {
   useEffect(() => {
     if (isUpdating) {
       const updatingData = async () => {
-        const response = await updateData(`/api/contacts`, contact);
+        const response = await updateData(`/api/contacts/${id}`, contact);
         const json = await response.json();
         const { success, message, error }: IResultsProps = json;
         const data: IContactsProps = json.data;
 
         if (success) {
           handleResponse("success", message);
-          setIsCompleted(true);
           setIsUpdating(false);
           setIsLoading(false);
           reset();
@@ -224,7 +215,8 @@ function AddEdit() {
               label="Nome"
               type={"text"}
               fullWidth
-              variant="outlined"
+              variant="filled"
+              size="small"
               error={!!errors.name}
               placeholder={"Insira o nome aqui"}
               InputLabelProps={{ shrink: true }}
@@ -237,7 +229,8 @@ function AddEdit() {
               label="E-mail"
               type={"email"}
               fullWidth
-              variant="outlined"
+              variant="filled"
+              size="small"
               error={!!errors.email}
               placeholder={"Insira o e-mail aqui"}
               InputLabelProps={{ shrink: true }}
@@ -250,7 +243,8 @@ function AddEdit() {
               label="Idade"
               type={"number"}
               fullWidth
-              variant="outlined"
+              variant="filled"
+              size="small"
               error={!!errors.age}
               placeholder={"Insira a idade aqui"}
               InputLabelProps={{ shrink: true }}
@@ -263,7 +257,8 @@ function AddEdit() {
               label="Telefone"
               type={"phone"}
               fullWidth
-              variant="outlined"
+              variant="filled"
+              size="small"
               error={!!errors.phone}
               placeholder={"Insira o telefone aqui"}
               InputLabelProps={{ shrink: true }}
@@ -276,7 +271,8 @@ function AddEdit() {
               label="Endereço"
               type={"text"}
               fullWidth
-              variant="outlined"
+              variant="filled"
+              size="small"
               error={!!errors.address}
               placeholder={"Insira o endereço aqui"}
               InputLabelProps={{ shrink: true }}
@@ -289,7 +285,8 @@ function AddEdit() {
               label="Cidade"
               type={"text"}
               fullWidth
-              variant="outlined"
+              variant="filled"
+              size="small"
               error={!!errors.city}
               placeholder={"Insira a cidade aqui"}
               InputLabelProps={{ shrink: true }}
@@ -302,7 +299,8 @@ function AddEdit() {
               label="CEP"
               type={"number"}
               fullWidth
-              variant="outlined"
+              variant="filled"
+              size="small"
               error={!!errors.zipCode}
               placeholder={"Insira o CEP aqui"}
               InputLabelProps={{ shrink: true }}
@@ -315,7 +313,8 @@ function AddEdit() {
               label="Registrar Id"
               type={"number"}
               fullWidth
-              variant="outlined"
+              variant="filled"
+              size="small"
               error={!!errors.registrarId}
               placeholder={"Insira o id do registrador aqui"}
               InputLabelProps={{ shrink: true }}
@@ -331,10 +330,10 @@ function AddEdit() {
                 sx={buttonSx}
                 onClick={handleSubmit(onSubmit)}
               >
-                {isCompleted ? <CheckIcon /> : <SaveIcon />}
+                {isPosting || isUpdating ? <CheckIcon /> : <SaveIcon />}
               </Fab>
             </Tooltip>
-            {isLoading && (
+            {isPosting || isUpdating && (
               <CircularProgress
                 size={68}
                 sx={{
