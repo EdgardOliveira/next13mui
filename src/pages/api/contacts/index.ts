@@ -36,7 +36,7 @@ export default async function Contacts(
     default:
       res
         .status(405)
-        .setHeader("Allow", ["GET", "UPDATE", "POST"])
+        .setHeader("Allow", ["GET", "POST"])
         .json({
           success: false,
           message: `Método: ${method} não é permitido para esta rota`,

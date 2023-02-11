@@ -13,12 +13,12 @@ export default async function Contacts(
       break;
     case "PUT":
       update(req, res);
-      break;      
-      case "DELETE":
+      break;
+    case "DELETE":
       deleteById(req, res);
       break;
     default:
-      res.setHeader("Allow", ["GET", "DELETE"]);
+      res.setHeader("Allow", ["GET", "PUT", "DELETE"]);
       res.status(405).end(`Método: ${method} não é permitido para esta rota`);
   }
 }
