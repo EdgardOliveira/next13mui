@@ -1,16 +1,16 @@
 import BaseLayout from "@/components/baseLayout/BaseLayout";
-import TableData from "@/components/tableData/TableData";
-import { useState, useEffect } from "react";
-import { IContactsProps, IResultsProps } from "../api/contacts";
-import { IconButton, Stack, Tooltip } from "@mui/material";
-import { DeleteForever, Edit } from "@mui/icons-material";
-import { deleteData, getAllData } from "@/libs/rest/RESTClient";
-import { SnackbarProvider, VariantType, useSnackbar } from "notistack";
-import { useRouter } from "next/router";
-import Header from "@/components/header/Header";
 import ConfirmationDialog from "@/components/confirmationDialog/ConfirmationDialog";
+import TableData from "@/components/tableData/TableData";
+import { deleteData, getAllData } from "@/libs/rest/RESTClient";
+import { DeleteForever, Edit } from "@mui/icons-material";
+import { IconButton, Stack, Tooltip } from "@mui/material";
+import { useRouter } from "next/router";
+import { SnackbarProvider, useSnackbar, VariantType } from "notistack";
+import { useEffect, useState } from "react";
+import { IResultsProps } from "../api/contacts";
+import { IResourcesProps } from "../api/resources";
 
-export default function Iniciar() {
+export default function Recursos() {
   return (
     <SnackbarProvider
       iconVariant={{
@@ -25,64 +25,40 @@ export default function Iniciar() {
         horizontal: "right",
       }}
     >
-      <Home />
+      <Resource />
     </SnackbarProvider>
   );
 }
 
-function Home() {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+function Resource() {
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [open, setOpen] = useState<boolean>(false);
   const [deleteId, setDeleteId] = useState<string>("");
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
-  const [open, setOpen] = useState<boolean>(false);
-  const [contacts, setContacts] = useState<IContactsProps[]>([]);
-  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const [resources, setResources] = useState<IResourcesProps[]>();
   const router = useRouter();
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
   const columns = [
-    { field: "id", headerName: "ID", flex: 0.5 },
+    { field: "id", headerName: "IDs", flex: 0.5 },
     {
       field: "name",
-      headerName: "Name",
-      flex: 1,
-      cellClassName: "name-column--cell",
-    },
-    {
-      field: "email",
-      headerName: "Email",
+      headerName: "NOMES",
       flex: 1,
     },
     {
-      field: "age",
-      headerName: "Age",
-      type: "number",
-      headerAlign: "left",
-      align: "left",
-    },
-    {
-      field: "phone",
-      headerName: "Phone Number",
+      field: "description",
+      headerName: "DESCRIÇÕES",
       flex: 1,
     },
     {
-      field: "address",
-      headerName: "Address",
+      field: "status",
+      headerName: "STATUS",
       flex: 1,
     },
-    {
-      field: "city",
-      headerName: "City",
-      flex: 1,
-    },
-    {
-      field: "zipCode",
-      headerName: "Zip Code",
-      flex: 1,
-    },
-    { field: "registrarId", headerName: "Registrar ID" },
     {
       field: "actions",
-      headerName: "Actions",
+      headerName: "AÇÕES",
       width: 180,
       sortable: false,
       disableClickEventBubbling: true,
@@ -119,11 +95,11 @@ function Home() {
   ];
 
   const handleAdd = () => {
-    router.push("/contacts/0");
+    router.push("/resources/0");
   };
 
   const handleEdit = async (id: string) => {
-    router.push(`/contacts/${id}`);
+    router.push(`/resources/${id}`);
   };
 
   const handleDelete = async (id: string) => {
@@ -156,15 +132,15 @@ function Home() {
   useEffect(() => {
     if (isLoading) {
       const fetchData = async () => {
-        const response = await getAllData("/api/contacts");
+        const response = await getAllData("/api/resources");
         const json = await response.json();
         const { success, message, error }: IResultsProps = json;
-        const data: IContactsProps[] = json.data;
+        const data: IResourcesProps[] = json.data;
 
         if (success) {
           handleResponse("success", message);
           setIsLoading(false);
-          setContacts(data);
+          setResources(data);
         } else {
           handleResponse("error", String(error));
           console.log(`Ocorreu um erro: ${error}`);
@@ -177,7 +153,7 @@ function Home() {
   useEffect(() => {
     if (isDeleting) {
       const deletingData = async () => {
-        const result = await deleteData(`/api/contacts/${deleteId}`);
+        const result = await deleteData(`/api/resources/${deleteId}`);
         const json = await result.json();
         const { success, message, error }: IResultsProps = json;
 
@@ -200,9 +176,9 @@ function Home() {
   }, [isDeleting]);
 
   return (
-    <BaseLayout title="Contatos" subtitle="Listagem de contatos">
+    <BaseLayout title="Recursos" subtitle="Listagem de recursos do sistema">
       <TableData
-        rows={contacts}
+        rows={resources}
         columns={columns}
         isLoading={isLoading}
         addButton={handleAdd}

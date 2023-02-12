@@ -1,19 +1,12 @@
 import BaseLayout from "@/components/baseLayout/BaseLayout";
-import HomeIcon from "@mui/icons-material/Home";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import PeopleIcon from "@mui/icons-material/People";
-import WifiIcon from "@mui/icons-material/Wifi";
-import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
 import SaveIcon from "@mui/icons-material/Save";
 import CheckIcon from "@mui/icons-material/Check";
-import { IMenuProps } from "@/components/sidebar/Sidebar";
 import { useState, useEffect } from "react";
 import { IContactsProps, IResultsProps } from "../api/contacts";
 import { Box, CircularProgress, Fab, TextField, Tooltip } from "@mui/material";
 import { getDataById, postData, updateData } from "@/libs/rest/RESTClient";
 import { SnackbarProvider, VariantType, useSnackbar } from "notistack";
 import { useRouter } from "next/router";
-import Header from "@/components/header/Header";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { InferType, number, object, string } from "yup";
@@ -77,15 +70,6 @@ function AddEdit() {
   } = useForm<TFormData>({
     resolver: yupResolver(validationSchema),
   });
-
-  // itens do menu
-  const itensMenu: Array<IMenuProps> = [
-    { titulo: "Inicial", url: "/", icone: <HomeIcon /> },
-    { titulo: "Dashboard", url: "/dashboard", icone: <DashboardIcon /> },
-    { titulo: "Grupos", url: "/grupos", icone: <PeopleIcon /> },
-    { titulo: "Redes", url: "/redes", icone: <WifiIcon /> },
-    { titulo: "Usuários", url: "/usuarios", icone: <AssignmentIndIcon /> },
-  ];
 
   const buttonSx = {
     ...(isLoading && {
@@ -195,11 +179,14 @@ function AddEdit() {
   }, [contact]);
 
   return (
-    <BaseLayout itensMenu={itensMenu}>
-      <Header
-        title={"Contatos"}
-        subtitle={isAddMode ? "Cadastrar dados" : "Editar dados"}
-      ></Header>
+    <BaseLayout
+      title="Contatos"
+      subtitle={
+        isAddMode
+          ? "Formulário de cadastro de dados"
+          : "Formulário de modificação de dados"
+      }
+    >
       <Box
         sx={{
           "& .MuiTextField-root": { m: 1, width: "35ch" },
@@ -333,18 +320,19 @@ function AddEdit() {
                 {isPosting || isUpdating ? <CheckIcon /> : <SaveIcon />}
               </Fab>
             </Tooltip>
-            {isPosting || isUpdating && (
-              <CircularProgress
-                size={68}
-                sx={{
-                  color: green[500],
-                  position: "absolute",
-                  top: -6,
-                  left: -6,
-                  zIndex: 1,
-                }}
-              />
-            )}
+            {isPosting ||
+              (isUpdating && (
+                <CircularProgress
+                  size={68}
+                  sx={{
+                    color: green[500],
+                    position: "absolute",
+                    top: -6,
+                    left: -6,
+                    zIndex: 1,
+                  }}
+                />
+              ))}
           </Box>
         </form>
       </Box>
